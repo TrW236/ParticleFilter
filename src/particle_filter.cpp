@@ -61,12 +61,18 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	std_y = std_pos[1];
 	std_theta = std_pos[2];
 
-	 for (int i = 0; i < num_particles; ++i)
-	 {
-	 	particles[i].x += velocity / yaw_rate *(sin(particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
-	 	particles[i].y += velocity / yaw_rate *(cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
-	 	particles[i].theta += yaw_rate * delta_t;
 
+
+	 for (int i = 0; i < num_particles; ++i)  // loop for every particle
+	 {	
+	 	if(abs(yaw_rate)<0.0001) {
+ 			particles[i].x += velocity * delta_t * cos(particles[i].theta);
+	 		particles[i].y += velocity * delta_t * sin(particles[i].theta);
+	 	} else {
+	 		particles[i].x += velocity / yaw_rate *(sin(particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
+	 		particles[i].y += velocity / yaw_rate *(cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
+	 		particles[i].theta += yaw_rate * delta_t;
+ 		}
 	 	normal_distribution<double> dist_x(particles[i].x, std_x);
 		normal_distribution<double> dist_y(particles[i].y, std_y);
 		normal_distribution<double> dist_theta(particles[i].theta, std_theta);
@@ -151,7 +157,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			new_w *= exp(-pow(transformed_obs[j].x - selected_map.landmark_list[transformed_obs[j].id].x_f, 2)/2.0/pow(std_r, 2)
 						-pow(transformed_obs[j].y - selected_map.landmark_list[transformed_obs[j].id].y_f, 2)/2.0/pow(std_b,2))/
 						2.0/PI/std_r/std_b;
-			std::cout<<new_w<<endl;
+			//std::cout<<new_w<<endl;
 		}
 		weights.push_back(new_w);
 		// std::cout<<weights[i];
