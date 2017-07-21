@@ -20,9 +20,9 @@
 
 using namespace std;
 
-#define NUM_PARTICLES 1
+#define NUM_PARTICLES 100
 
-bool debug = true;
+bool debug = false;
 
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
@@ -48,7 +48,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 		theta = dist_theta(gen);
 		weight = 1.0;
 		Particle par;
-		par = (Particle) { i, x, theta};
+		par = (Particle) { i, x, y, theta};
 		weights.push_back(weight);
 		particles.push_back(par);
 		if (debug)
@@ -136,7 +136,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		double par_x = particles[i].x;
 		double par_y = particles[i].y;
 		double par_theta = particles[i].theta;
-
+		// cout<<par_x<<","<<par_y<<","<<par_theta<<endl;
 		// restrict sensor range (reduce landmarks to consider)
 		Map selected_map;
 		selected_map.landmark_list.clear();
@@ -150,7 +150,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 				selected_map.landmark_list.push_back(map_landmarks.landmark_list[j]);
 				if (debug)
 				{
-					cout<<"selected landmark(x,y)"<<map_landmarks.landmark_list[j].x_f<<", "<<map_landmarks.landmark_list[j].y_f<<"; idx:"<<idx_landmark<<endl;
+					cout<<"selected landmark(x,y)"<<map_landmarks.landmark_list[j].x_f<<", "<<map_landmarks.landmark_list[j].y_f<<"; idx:"<<map_landmarks.landmark_list[j].id_i<<endl;
 					idx_landmark++;
 				}
 				
@@ -165,14 +165,15 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			tmp_ob.x = observations[j].x * cos(par_theta) - observations[j].y * sin(par_theta) + par_x;
 			tmp_ob.y = observations[j].x * sin(par_theta) + observations[j].y * cos(par_theta) + par_y;
 
+
 			// association
 
-			double distance = pow(selected_map.landmark_list[0].x_f - observations[j].x, 2) + pow(selected_map.landmark_list[0].y_f-observations[j].y, 2); // first landmark
+			double distance = pow(selected_map.landmark_list[0].x_f - tmp_ob.x, 2) + pow(selected_map.landmark_list[0].y_f-tmp_ob.y, 2); // first landmark
 			double tmp_dist;
 			tmp_ob.id = 0;
 			for (int k = 1; k < selected_map.landmark_list.size(); ++k)  // loop for every possible landmarks
 			{
-				tmp_dist = pow(selected_map.landmark_list[k].x_f - observations[j].x,2) + pow(selected_map.landmark_list[k].y_f-observations[j].y,2);
+				tmp_dist = pow(selected_map.landmark_list[k].x_f - tmp_ob.x,2) + pow(selected_map.landmark_list[k].y_f-tmp_ob.y,2);
 				if (tmp_dist < distance)
 				{
 					distance = tmp_dist;
@@ -182,7 +183,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			transformed_obs.push_back(tmp_ob);
 			if (debug)
 			{
-				cout<<"observation(x, y)"<<observations[j].x<<", "<<observations[j].y<<"->transformed(x, y)"<<tmp_ob.x<<", "<<tmp_ob.y<<"<-associated landmark idx:"<<tmp_ob.id<<endl;
+				cout<<"observation(x, y)"<<observations[j].x<<", "<<observations[j].y<<"->transformed(x, y)"<<tmp_ob.x<<", "<<tmp_ob.y<<"<-associated landmark idx:"<<selected_map.landmark_list[tmp_ob.id].id_i<<endl;
 			}
 			
 		}
@@ -196,7 +197,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 						2.0/PI/std_r/std_b;
 			if (debug)
 			{
-				cout<<"Particle "<<i<<"; observation nr. "<<j<<"; weight"<<new_w<<endl;
+				cout<<"landmark idx: "<< selected_map.landmark_list[transformed_obs[j].id].id_i<<"; std "<<std_r<<", "<<std_b<<endl;
+				cout<<"Particle "<<i<<"; observation nr. "<<j<<"; weight: "<<new_w<<endl;
 			}
 			
 		}
